@@ -14,6 +14,19 @@ from security import LOG_FILE, log_attempt
 # Dynamic tool forge admin panel
 from admin_forge import tool_forge_panel, get_dynamic_tools, run_dynamic_tool
 
+# Import nuclei engine functions
+from nuclei_engine import (
+    is_nuclei_installed, 
+    install_nuclei, 
+    run_scan_async,
+    get_scan_log,
+    get_scan_status,
+    WS_ENABLED
+)
+
+# Import openclaw bridge
+import openclaw_bridge as oc
+
 # --- APP CONFIG ---
 # Page config should be set early
 st.set_page_config(
@@ -109,14 +122,14 @@ if os.path.exists(meta_file):
         if token:
             js = f"""
             <script>
-            (function() {
-              try {
+            (function() {{
+              try {{
                 var m = document.createElement('meta');
                 m.name = 'google-site-verification';
                 m.content = '{token}';
                 document.head.appendChild(m);
-              } catch(e) {{ console.log(e); }}
-            })();
+              }} catch(e) {{ console.log(e); }}
+            }})();
             </script>
             """
             components.html(js, height=0)
@@ -161,7 +174,21 @@ with st.sidebar:
     except Exception:
         pass
 
-    menu_options = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "WHATSAPP-OSINT", "ACCESS-LOGS", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)", "ADMIN-FORGE"] + dynamic_tools
+    menu_options = [
+        "DASHBOARD", 
+        "RECON-ORCHESTRATOR", 
+        "EXPLOIT-LAB", 
+        "WHATSAPP-OSINT", 
+        "SYSTEM-ACCESS", 
+        "GLOBAL-INTEL", 
+        "BROWSER-SENTINEL",
+        "ACCESS-LOGS", 
+        "ENCYCLOPEDIA", 
+        "NUCLEI-CONSOLE", 
+        "AI-AGENT (OPENCLAW)", 
+        "NEURAL-MONITOR",
+        "ADMIN-FORGE"
+    ] + dynamic_tools
     choice = st.sidebar.selectbox("COMMAND CENTER", menu_options)
 
 # --- DASHBOARD ---
@@ -194,6 +221,8 @@ elif choice == "EXPLOIT-LAB":
     vector = st.selectbox("Vector", ["SSTI", "OAuth Bypass", "JWT Injection"])
     st.code("{{7*7}}", language="jinja2")
     st.button("ENCODE & BYPASS WAF")
+
+# --- WHATSAPP-OSINT ---
 elif choice == "WHATSAPP-OSINT":
     st.header("📱 WhatsApp Intelligence Gatherer")
     
@@ -211,6 +240,7 @@ elif choice == "WHATSAPP-OSINT":
                 run_whatsapp_scan(target_number)
             else:
                 st.error("Target number required.")
+
 # --- SYSTEM ACCESS ---
 elif choice == "SYSTEM-ACCESS":
     st.header("💻 System Access Suite")
@@ -240,7 +270,6 @@ elif choice == "SYSTEM-ACCESS":
     # Use the helper in `app1.py` to render the persistent task manager UI
     add_persistent_task_manager(st)
 
-
 # --- GLOBAL INTEL ---
 elif choice == "GLOBAL-INTEL":
     st.header("🌎 Real-Time Attack Surface Map")
@@ -252,12 +281,13 @@ elif choice == "GLOBAL-INTEL":
     )
     st.map(map_data)
     st.caption("Live visualization of target infrastructure nodes.")
+
 # --- BROWSER SENTINEL ---
 elif choice == "BROWSER-SENTINEL":
     st.header("🛡️ Browser Sentinel — Integrity Check")
     st.write("This check attempts to detect automation / headless browsers. The check uses a small client-side probe and may reload the page to report results.")
 
-    # Inject client-side JS to detect navigator.webdriver and userAgent. The script appends query params and reloads the page so server can read them.
+    # Inject client-side JS to detect navigator.webdriver and userAgent
     if st.button("Run Browser Integrity Check"):
         js = """
         <script>
@@ -273,24 +303,28 @@ elif choice == "BROWSER-SENTINEL":
         })();
         </script>
         """
-        st.components.v1.html(js, height=60)
+        components.html(js, height=60)
 
-    params = st.experimental_get_query_params()
-    if params.get('sentinel'):
-        headless = params.get('headless', ['0'])[0] == '1'
-        ua = params.get('ua', [''])[0]
-        if headless:
-            st.warning("Automation/Headless browser detected.")
-            try:
-                log_attempt("SENTINEL_BLOCK", f"Automation/Headless detected, ua={ua}")
-            except Exception:
-                pass
-        else:
-            st.success("Browser appears normal.")
-        # Clear sentinel params to avoid repeated triggers on refresh
-        st.experimental_set_query_params()
+    # Check query params
+    try:
+        params = st.query_params
+        if params.get('sentinel'):
+            headless = params.get('headless', '0') == '1'
+            ua = params.get('ua', '')
+            if headless:
+                st.warning("Automation/Headless browser detected.")
+                try:
+                    log_attempt("SENTINEL_BLOCK", f"Automation/Headless detected, ua={ua}")
+                except Exception:
+                    pass
+            else:
+                st.success("Browser appears normal.")
+            # Clear sentinel params
+            st.query_params.clear()
+    except:
+        pass
 
-# --- ACCESS LOGS (Staff Only) ---
+# --- ACCESS LOGS ---
 elif choice == "ACCESS-LOGS":
     st.header("🕵️ Security Access Logs")
     if os.path.exists(LOG_FILE):
@@ -345,13 +379,13 @@ elif choice == "ENCYCLOPEDIA":
         if not filtered:
             st.warning("No entries match your query.")
         else:
-            terms = [f"{e['term']} — {e.get('category','') }" for e in filtered]
+            terms = [f"{e['term']} — {e.get('category','')}" for e in filtered]
             sel = st.selectbox("Entries", terms)
             sel_idx = terms.index(sel)
             entry = filtered[sel_idx]
 
             st.subheader(entry.get("term"))
-            st.markdown(f"**Category:** {entry.get('category','')}  ")
+            st.markdown(f"**Category:** {entry.get('category','')}")
             st.markdown(f"**Definition:**\n{entry.get('definition','')}")
             st.markdown(f"**Advanced TTPs (descriptive):**\n{entry.get('advanced_ttp','')}")
             st.markdown(f"**2026 Trends:**\n{entry.get('2026_trends','')}")
@@ -366,8 +400,6 @@ elif choice == "ENCYCLOPEDIA":
 # --- NUCLEI CONSOLE ---
 elif choice == "NUCLEI-CONSOLE":
     st.header("🎯 ProjectDiscovery Nuclei Integration")
-
-    from nuclei_engine import is_nuclei_installed, install_nuclei, run_scan
 
     if not is_nuclei_installed():
         st.error("⚠️ Nuclei is not installed on this system.")
@@ -405,19 +437,24 @@ elif choice == "NUCLEI-CONSOLE":
         # If WebSocket is enabled server-side, present an embedded client; otherwise poll logs
         if WS_ENABLED:
             st.info("WebSocket live-tail is enabled on the server. Streaming logs below.")
-            html = f"""
-            <div>
-              <pre id='log' style='background:#000;color:#0f0;padding:8px;height:300px;overflow:auto;'></pre>
-              <button id='clear'>Clear</button>
-              <script>
-                const ws = new WebSocket('ws://{nuclei_engine.WS_HOST}:{nuclei_engine.WS_PORT}');
-                const log = document.getElementById('log');
-                ws.onmessage = (e) => {{ log.textContent += e.data + '\n'; log.scrollTop = log.scrollHeight; }};
-                document.getElementById('clear').onclick = () => {{ log.textContent = '' }};
-              </script>
-            </div>
-            """
-            st.components.v1.html(html, height=360)
+            # Note: WS_HOST and WS_PORT need to be imported or defined
+            try:
+                from nuclei_engine import WS_HOST, WS_PORT
+                html = f"""
+                <div>
+                  <pre id='log' style='background:#000;color:#0f0;padding:8px;height:300px;overflow:auto;'></pre>
+                  <button id='clear'>Clear</button>
+                  <script>
+                    const ws = new WebSocket('ws://{WS_HOST}:{WS_PORT}');
+                    const log = document.getElementById('log');
+                    ws.onmessage = (e) => {{ log.textContent += e.data + '\\n'; log.scrollTop = log.scrollHeight; }};
+                    document.getElementById('clear').onclick = () => {{ log.textContent = ''; }};
+                  </script>
+                </div>
+                """
+                components.html(html, height=360)
+            except:
+                st.error("WebSocket configuration not available")
         else:
             st.info("WebSocket disabled; polling logs from disk.")
             scan_id = st.session_state.get("nuclei_last_scan")
@@ -427,11 +464,15 @@ elif choice == "NUCLEI-CONSOLE":
                 status = get_scan_status(scan_id)
                 st.write(status)
             else:
-                st.write("No active scan. Start a scan to see live output.")        # end of encyclopedia entries UI
-elif choice == "AI-AGENT (OPENCLAW)":
-    import openclaw_bridge as oc
+                st.write("No active scan. Start a scan to see live output.")
 
+# --- AI-AGENT (OPENCLAW) ---
+elif choice == "AI-AGENT (OPENCLAW)":
     st.header("🦞 OpenClaw Autonomous Agent Control (SAFE)")
+
+    enabled = os.getenv("ZTRAP_ENABLE_OPENCLAW") == "1"
+    if not enabled:
+        st.warning("OpenClaw integration is disabled. Set ZTRAP_ENABLE_OPENCLAW=1 to enable controls.")
 
     status = oc.get_status()
     if status.get("moltbot"):
@@ -466,50 +507,6 @@ elif choice == "AI-AGENT (OPENCLAW)":
         
     if st.checkbox("Connect to Telegram/WhatsApp"):
         st.write("Run `moltbot onboard` in your terminal to pair your device.")
-# --- AI-AGENT (OPENCLAW) ---
-
-# --- ADMIN-FORGE ---
-elif choice == "ADMIN-FORGE":
-    tool_forge_panel()
-
-# --- DYNAMIC TOOLS ---
-elif choice in dynamic_tools:
-    st.header(f"⚙️ Active Tool: {choice.upper()}")
-    run_dynamic_tool(choice)
-elif choice == "AI-AGENT (OPENCLAW)":
-    import openclaw_bridge as oc
-
-    st.header("🦞 OpenClaw (safe bridge)")
-    enabled = os.getenv("ZTRAP_ENABLE_OPENCLAW") == "1"
-    if not enabled:
-        st.warning("OpenClaw integration is disabled. Set ZTRAP_ENABLE_OPENCLAW=1 to enable controls.")
-
-    status = oc.get_status()
-    st.write(status)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Show manual install instructions"):
-            st.code(oc.install_instructions())
-
-        if st.button("Download installer for review (dry-run)"):
-            try:
-                ok, path = oc.prepare_install_dry_run()
-                if ok:
-                    st.success(f"Installer ready for review: {path}")
-                    st.info("Inspect the downloaded installer before executing. Prefer a disposable VM or container.")
-            except Exception as e:
-                st.error(f"Failed to prepare installer: {e}")
-
-    with col2:
-        st.code(oc.start_gateway_command())
-        st.info("Run this command locally to start the gateway (do not run from the web UI).")
-
-        if st.checkbox("Enable Nuclei Auto-Scan Skill (simulation only)", value=False):
-            st.info("In simulation mode the agent may suggest scans; in production pair your agent manually via 'moltbot onboard'.")
-
-        if st.checkbox("Connect to Telegram/WhatsApp (manual)"):
-            st.write("Run `moltbot onboard` in your terminal to pair your device.")
 
 # --- NEURAL MONITOR ---
 elif choice == "NEURAL-MONITOR":
@@ -529,64 +526,11 @@ elif choice == "NEURAL-MONITOR":
         time.sleep(1)
         st.success("Agent Neutralized.")
 
+# --- ADMIN-FORGE ---
+elif choice == "ADMIN-FORGE":
+    tool_forge_panel()
 
-# --- BROWSER SENTINEL ---
-elif choice == "BROWSER-SENTINEL":
-    st.header("🛡️ Browser Sentinel — Integrity Check")
-    st.write("This check attempts to detect automation / headless browsers. The check uses a small client-side probe and may reload the page to report results.")
-
-    # Inject client-side JS to detect navigator.webdriver and userAgent. The script appends query params and reloads the page so server can read them.
-    if st.button("Run Browser Integrity Check"):
-        js = """
-        <script>
-        (function() {
-          try {
-            const isHeadless = !!navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent);
-            const params = new URLSearchParams(window.location.search);
-            params.set('sentinel', '1');
-            params.set('headless', isHeadless ? '1' : '0');
-            params.set('ua', encodeURIComponent(navigator.userAgent || ''));
-            window.location.search = params.toString();
-          } catch(e) { console.log(e); }
-        })();
-        </script>
-        """
-        st.components.v1.html(js, height=60)
-
-    params = st.experimental_get_query_params()
-    if params.get('sentinel'):
-        headless = params.get('headless', ['0'])[0] == '1'
-        ua = params.get('ua', [''])[0]
-        if headless:
-            st.warning("Automation/Headless browser detected.")
-            try:
-                log_attempt("SENTINEL_BLOCK", f"Automation/Headless detected, ua={ua}")
-            except Exception:
-                pass
-        else:
-            st.success("Browser appears normal.")
-        # Clear sentinel params to avoid repeated triggers on refresh
-        st.experimental_set_query_params()
-
-# --- ACCESS LOGS (Staff Only) ---
-elif choice == "ACCESS-LOGS":
-    st.header("🕵️ Security Access Logs")
-    if os.path.exists(LOG_FILE):
-        try:
-            with open(LOG_FILE, "r") as f:
-                logs = json.load(f)
-        except Exception as e:
-            st.error(f"Failed to load logs: {e}")
-            logs = []
-
-        if logs:
-            st.table(pd.DataFrame(logs).sort_values(by="timestamp", ascending=False))
-        else:
-            st.info("No suspicious activity recorded.")
-
-        if st.button("PURGE LOGS"):
-            os.remove(LOG_FILE)
-            st.success("Logs purged.")
-            st.rerun()
-    else:
-        st.info("No suspicious activity recorded.")
+# --- DYNAMIC TOOLS ---
+elif choice in dynamic_tools:
+    st.header(f"⚙️ Active Tool: {choice.upper()}")
+    run_dynamic_tool(choice)
