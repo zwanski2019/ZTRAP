@@ -1,0 +1,41 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Lint with Python syntax check
+        run: |
+          python -m py_compile app.py
+          python -m py_compile nuclei_engine.py
+          python -m py_compile openclaw_bridge.py
+          python -m py_compile admin_forge.py
+          python -m py_compile security.py
+          python -m py_compile seo.py
+          python -m py_compile whatsapp_engine.py
+          python -m py_compile app1.py
+          python -m py_compile rest_api.py
+          python -m py_compile sync_intel.py
+          python -m py_compile dictionary_engine.py
+          
+      - name: Run tests
+        env:
+          ZTRAP_MASTER_KEY: test_key_for_ci
+          ZTRAP_FAKE_NUCLEI: "1"
+        run: |
+          pytest -v tests/
