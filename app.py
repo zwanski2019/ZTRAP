@@ -499,8 +499,7 @@ elif choice == "NEURAL-MONITOR":
         st.warning("Injecting 'Reset-Context' token into Agent stream...")
         time.sleep(1)
         st.success("Agent Neutralized.")
-<<<<<<< HEAD
-=======
+
 
 # --- BROWSER SENTINEL ---
 elif choice == "BROWSER-SENTINEL":
@@ -562,4 +561,3 @@ elif choice == "ACCESS-LOGS":
             st.rerun()
     else:
         st.info("No suspicious activity recorded.")
->>>>>>> fix/whatsapp-routing
