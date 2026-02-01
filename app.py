@@ -8,6 +8,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from app1 import add_persistent_task_manager
+from whatsapp_engine import install_whatsapp_osint, run_whatsapp_scan
 
 # --- APP CONFIG ---
 # Page config should be set early
@@ -61,7 +62,7 @@ st.markdown(
 # --- SIDEBAR NAV ---
 with st.sidebar:
     st.title("🛡️ ZWANZKI")
-    menu = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)"]
+    menu = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "WHATSAPP-OSINT", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)"]
     choice = st.sidebar.radio("COMMANDS", menu)
 
 # --- DASHBOARD ---
