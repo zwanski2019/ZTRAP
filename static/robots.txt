@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Allow: /app/static/
+Disallow: /admin/  # Keep your Tool-Forge private
+
+Sitemap: https://zwanski.streamlit.app/app/static/sitemap.xml

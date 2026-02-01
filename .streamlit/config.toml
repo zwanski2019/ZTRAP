@@ -3,6 +3,8 @@ headless = true
 port = 8501
 enableCORS = false
 enableXsrfProtection = true
+# enableStaticServing allows serving files from /static via /app/static/
+enableStaticServing = true
 
 [theme]
 primaryColor = "#00FF41"
