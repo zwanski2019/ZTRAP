@@ -1,0 +1,88 @@
+[
+  {
+    "term": "Agentic AI Hijacking",
+    "category": "Initial Access",
+    "definition": "High-level: Subverting autonomous AI agents by manipulating prompts or upstream integrations so the agent performs unauthorized data access or actions (non-actionable description).",
+    "advanced_ttp": "Indirect prompt manipulation via compromised third-party integrations; emphasis on stealth and exfiltration through orchestration policies (descriptive only).",
+    "2026_trends": "AI orchestration amplifies scale; defensive controls include strict payload validation, allowlists for agent actions, and telemetry on agent task execution.",
+    "unknown_factor": "Supply-chain poisoning of agent orchestration policies or weights leading to long-duration, stealthy data leakage.",
+    "detection": "Monitor agent API calls for anomalous endpoints or task patterns; log and review all third-party integration events.",
+    "mitigation": "Enforce least-privilege for agent tokens, restrict integrations, validate inputs, and perform regular policy audits and canary tests."
+  },
+  {
+    "term": "Deepfake Identity-Forge",
+    "category": "Social Engineering",
+    "definition": "High-level: Real-time synthesis of audio/video biometric evidence to bypass liveness checks and social engineering defenses (non-actionable).",
+    "advanced_ttp": "Real-time man-in-the-middle on video conferencing feeds to substitute a high-fidelity AI-generated avatar during verification calls (descriptive).",
+    "2026_trends": "Generative models increase fidelity; defenders focus on multi-modal attestation, hardware-backed device attestation, and active challenge-response checks.",
+    "unknown_factor": "Firmware-level compromise of camera or biometric sensors that report forged attestations to verification servers.",
+    "detection": "Cross-verify biometric streams with device telemetry, watch for replay/timing artifacts, and correlate session metadata for inconsistencies.",
+    "mitigation": "Adopt multi-factor, multi-modal verification (biometrics + device-bound attestations), implement liveness-challenges, and use hardware attestation where available."
+  },
+  {
+    "term": "EDR-Silencing (Kernel-Blind)",
+    "category": "Persistence",
+    "definition": "High-level: Techniques that attempt to blind or unhook EDR sensors at kernel (ring-0) level, often using vulnerable or legitimately signed drivers (descriptive).",
+    "advanced_ttp": "Bring-Your-Own-Vulnerable-Driver (BYOVD) strategies where attackers leverage legitimate-signed but vulnerable drivers to alter kernel callbacks and evade detection.",
+    "2026_trends": "Hardware-assisted protections and stricter driver signing policies are being adopted to reduce attack surface.",
+    "unknown_factor": "Firmware or hypervisor-based hooks that can render endpoint protections blind at scale.",
+    "detection": "Monitor kernel module loads, driver signing anomalies, and telemetry for unexpected callback registration or EDR outages.",
+    "mitigation": "Enforce strict driver signing and code integrity, restrict driver installation privileges, and validate drivers against known-good inventories."
+  },
+  {
+    "term": "Quantum-Resistant Handshake Bypass",
+    "category": "Encryption",
+    "definition": "High-level: Exploiting implementation flaws or side-channels in post-quantum cryptography (PQC) libraries before they reach maturity (defensive, non-actionable overview).",
+    "advanced_ttp": "Targeting timing and side-channel leakage in early PQC implementations (e.g., Kyber variants) to degrade key secrecy while avoiding obvious failures.",
+    "2026_trends": "Increased adoption of vetted PQC implementations, constant-time migration patterns, and hybrid handshakes becoming mainstream.",
+    "unknown_factor": "Fault-injection or micro-architectural attacks that specifically target PQC primitives to induce recoverable leakage.",
+    "detection": "Monitor handshake timing distributions, unexpected negotiation fallbacks, and discrepancies in PQC key lifecycles.",
+    "mitigation": "Use vetted PQC libraries, enable constant-time operations, apply side-channel hardening, and adopt hybrid handshake strategies during migration."
+  },
+  {
+    "term": "Shadow-SaaS Exfiltration",
+    "category": "Exfiltration",
+    "definition": "High-level: Abuse of long-lived OAuth tokens or forgotten third-party integrations to move sensitive data through legitimate API flows (defensive summary only).",
+    "advanced_ttp": "Chaining compromised SaaS app tokens across services to pivot and exfiltrate data via authorized API calls while minimizing network anomalies.",
+    "2026_trends": "Organizations are moving toward centralized token inventories, short-lived tokens, and fine-grained OAuth scopes to reduce risk.",
+    "unknown_factor": "Token-delegation chains that cross organizational boundaries enabling stealthy data aggregation.",
+    "detection": "Track anomalous API requests and unusual cross-service access patterns; maintain an integration inventory.",
+    "mitigation": "Rotate tokens, enforce least-privilege scopes, maintain an integration inventory, and revoke unused third-party app tokens."
+  },
+  {
+    "category": "Deep Reconnaissance",
+    "term": "Starlink-Mesh Mapping (Sub-Surface)",
+    "definition": "Technique for mapping air-gapped or remote facilities by intercepting Starlink-to-Ground-Station telemetry to triangulate hidden server clusters.",
+    "advanced_ttp": "Using software-defined radio (SDR) to passively monitor 12GHz Starlink beacon signatures, correlating latency drops with physical hardware density.",
+    "emerging_trend_2026": "AI-automated 'Constellation OSINT' where botnets scrape orbital satellite schedules to predict windows of target visibility.",
+    "the_unknown_factor": "Identity-Forge: Creating high-fidelity digital replicas of satellite maintenance staff to gain legitimate terminal access to global mesh backbones.",
+    "command": "sdr_recon --freq 12.0G --target 'Area_51_Zone_B' --output matrix.map"
+  },
+  {
+    "category": "Weaponization & Initial Access",
+    "term": "Deepfake Phishing (Vibe-Coding Injection)",
+    "definition": "The use of real-time AI audio/video synthesis to impersonate executives during high-stakes 'Vibe-Coding' (AI-assisted dev) sessions.",
+    "advanced_ttp": "Interception of Slack Huddle streams to inject malicious 'code-snippets' into the AI's generation buffer, which are then accepted by the developer as 'AI-generated'.",
+    "emerging_trend_2026": "MFA-Fatigue v2.0: Triggering 'Zero-Click' push notifications via smart-wearable vulnerabilities (Apple Watch/Oura) that auto-approve due to high-stress biometric triggers.",
+    "the_unknown_factor": "Neural Hijacking: Using ultrasonic audio frequencies in phishing calls to subtly influence a target's cognitive state toward compliance (Speculative/Proprietary).",
+    "command": "deepfake_forge --audio ceo_voice.m4a --video live_session_capture.mp4 --inject 'git push origin master'"
+  },
+  {
+    "category": "Lateral Movement & Persistence",
+    "term": "EDR-Silencing (Kernel-Blind-M2M)",
+    "definition": "Using Machine-to-Machine (M2M) protocol flaws to unhook EDR/XDR agents before they can report to the cloud controller.",
+    "advanced_ttp": "Exploiting 'Follina-2.0' (2026 Zero-Day) to drop a signed, vulnerable kernel driver (BYOVD) that strips the security suite's Process-Notify-Callbacks.",
+    "emerging_trend_2026": "Cloud-Native Persistence: Living-off-the-Cloud (LotC) by creating 'Hidden Shadow Tenants' in Azure/AWS that monitor the legitimate admin's every move.",
+    "the_unknown_factor": "Decentralized C2 (dC2): Using blockchain-based smart contracts as an immutable, un-killable C2 instruction set that defenders cannot block without crashing the network.",
+    "command": "driver_kill --payload /tmp/ring0_silencer.sys --target 'Crowdstrike_V26_Agent'"
+  },
+  {
+    "category": "Data Exfiltration & Impact",
+    "term": "Steganographic AI-Streams (DNS-Tunneling 3.0)",
+    "definition": "Hiding exfiltrated data within the 'weights' or 'token-streams' of legitimate LLM queries to bypass Deep Packet Inspection (DPI).",
+    "advanced_ttp": "Splitting sensitive data into micro-packets hidden inside innocuous-looking GPT-5 prompts, reconstructed at a remote 'Neural-Listener'.",
+    "emerging_trend_2026": "Logic-Bomb Triggers: Encrypting the payload with the target's own public AI model weights, ensuring it only 'unlocks' when inside the target network.",
+    "the_unknown_factor": "Supply-Chain Poisoning of AI Weights: Altering the global weights of a common open-source model (Llama-4) so it contains a backdoor for anyone using it.",
+    "command": "neural_tunnel --file secrets.xlsx --stream 'Chat_GPT_V5_Session' --key zwanski_2026"
+  }
+]

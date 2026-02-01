@@ -1,26 +1,52 @@
-import streamlit as st
-import subprocess
 import os
 import json
+import subprocess
+from datetime import datetime
 import time
-import base64
-import getpass
+
+import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime
-
-# --- SECURITY: IDENTITY LOCK ---
-# Note: On Streamlit Cloud, getuser() returns 'adminuser'. 
-# For local Kali use, keep your name.
-if getpass.getuser() not in ["zwanski", "adminuser"]:
-    st.error("🛑 UNAUTHORIZED OPERATOR DETECTED. SYSTEM LOCKING.")
-    st.stop()
+from app1 import add_persistent_task_manager
 
 # --- APP CONFIG ---
+# Page config should be set early
 st.set_page_config(page_title="ZTRAP | Elite Red Team Console", layout="wide")
 
+# --- ZWANSKI SHIELD: ACCESS CONTROL ---
+# Session-based master-key authentication UI
+def check_access():
+    """Returns True if the user has entered the correct master key."""
+
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        # The Login UI
+        st.title("🛡️ Zwanski Tech: Master Access")
+        password = st.text_input("ENTER OPERATOR KEY:", type="password")
+
+        if st.button("AUTHENTICATE"):
+            if password == "zwanski":
+                st.session_state["authenticated"] = True
+                st.success("🔓 Access Granted. Initializing ZTRAP Console...")
+                st.rerun()  # Refresh the app to show the dashboard
+            else:
+                st.error("🛑 INVALID KEY. UNAUTHORIZED OPERATOR DETECTED.")
+        return False
+
+    return True
+
+# Ensure we stop execution until a successful login occurs
+if not check_access():
+    st.stop()
+
+# Indicate login in the sidebar
+st.sidebar.success("Logged in as: ZWANSKI")
+
 # --- CUSTOM CSS ---
-st.markdown("""
+st.markdown(
+    """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&display=swap');
     .stApp { background-color: #050505; color: #00FF41; font-family: 'Fira Code', monospace; }
@@ -28,12 +54,14 @@ st.markdown("""
     .stButton>button { border: 1px solid #00FF41; color: #00FF41; background: #000; width: 100%; font-weight: bold; }
     .stButton>button:hover { background: #00FF41; color: #000; box-shadow: 0px 0px 15px #00FF41; }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
 # --- SIDEBAR NAV ---
 with st.sidebar:
     st.title("🛡️ ZWANZKI")
-    menu = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "SYSTEM-ACCESS", "GLOBAL-INTEL"]
+    menu = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)"]
     choice = st.sidebar.radio("COMMANDS", menu)
 
 # --- DASHBOARD ---
@@ -53,11 +81,11 @@ elif choice == "RECON-ORCHESTRATOR":
     workflow = st.multiselect("TOOLCHAIN", ["Passive Recon", "Port Discovery", "Nuclei Scan"], default=["Passive Recon"])
     
     if st.button("INITIATE ATTACK SURFACE MAPPING"):
-        with st.status("Running Pipeline..."):
+        with st.spinner("Running Pipeline..."):
             if "Passive Recon" in workflow:
                 # This assumes tools are installed on the host
                 st.write("Executing Subfinder...")
-                # subprocess.run(f"subfinder -d {target}", shell=True) 
+                # Example (commented): subprocess.run(shlex.split(f"subfinder -d {target}"))
         st.success("Sequence complete. Results logged to shadow vault.")
 
 # --- EXPLOIT LAB ---
@@ -69,22 +97,249 @@ elif choice == "EXPLOIT-LAB":
 
 # --- SYSTEM ACCESS ---
 elif choice == "SYSTEM-ACCESS":
-    st.header("💻 Direct Shell Access")
-    st.warning("All commands are logged to internal audit.")
-    cmd = st.text_input("ROOT@KALI:~#")
-    if st.button("RUN"):
+    st.header("💻 System Access Suite")
+    st.warning("All command activity may be logged. Use with caution.")
+
+    # Toggle to enable real shell execution (disabled by default to be safe)
+    enable_shell = st.checkbox("Enable shell execution", value=False, help="Enable to run shell commands from this UI. Use with caution.")
+
+    st.subheader("Interactive Shell")
+    cmd = st.text_input("ROOT@KALI:~#", value="echo Hello World")
+    if enable_shell and st.button("RUN (with timeout)"):
         try:
-            out = subprocess.check_output(cmd, shell=True).decode()
-            st.code(out)
+            # Run with a short timeout to prevent runaway processes
+            proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+            if proc.stdout:
+                st.code(proc.stdout)
+            if proc.stderr:
+                st.error(proc.stderr)
+            st.success(f"Exit code: {proc.returncode}")
+        except subprocess.TimeoutExpired:
+            st.error("Command timed out")
         except Exception as e:
             st.error(f"Error: {e}")
+    elif not enable_shell:
+        st.info("Shell execution is currently disabled. Toggle 'Enable shell execution' to run commands.")
+
+    # Use the helper in `app1.py` to render the persistent task manager UI
+    add_persistent_task_manager(st)
+
 
 # --- GLOBAL INTEL ---
 elif choice == "GLOBAL-INTEL":
     st.header("🌎 Real-Time Attack Surface Map")
+    # Generate stable random-ish points around San Francisco for demo
+    rng = np.random.default_rng(seed=42)
     map_data = pd.DataFrame(
-        np.random.randn(10, 2) / [50, 50] + [37.76, -122.4], 
-        columns=['lat', 'lon']
+        rng.normal(loc=[37.76, -122.4], scale=[0.01, 0.01], size=(10, 2)),
+        columns=["lat", "lon"],
     )
     st.map(map_data)
     st.caption("Live visualization of target infrastructure nodes.")
+
+# --- ENCYCLOPEDIA ---
+elif choice == "ENCYCLOPEDIA":
+    st.header("📘 Encyclopedic Dictionary of Red Teaming (Safe, Defensive)")
+    st.info("This viewer contains defensive, non-actionable entries intended for education and blue-team use.")
+
+    # Load the sanitized dictionary
+    try:
+        with open("red_team_dictionary_safe.json", "r") as f:
+            entries = json.load(f)
+    except Exception as e:
+        st.error(f"Failed to load encyclopedia data: {e}")
+        entries = []
+
+    if not entries:
+        st.warning("No entries available. Add 'red_team_dictionary_safe.json' to the workspace.")
+    else:
+        categories = sorted({e.get("category", "Uncategorized") for e in entries})
+        cat = st.selectbox("Category", ["All"] + categories)
+        query = st.text_input("Search term or keyword")
+
+        def entry_matches(e):
+            if cat != "All" and e.get("category") != cat:
+                return False
+            if not query:
+                return True
+            q = query.lower()
+            return q in e.get("term", "").lower() or q in e.get("definition", "").lower() or q in e.get("advanced_ttp", "").lower()
+
+        filtered = [e for e in entries if entry_matches(e)]
+        if not filtered:
+            st.warning("No entries match your query.")
+        else:
+            terms = [f"{e['term']} — {e.get('category','') }" for e in filtered]
+            sel = st.selectbox("Entries", terms)
+            sel_idx = terms.index(sel)
+            entry = filtered[sel_idx]
+
+            st.subheader(entry.get("term"))
+            st.markdown(f"**Category:** {entry.get('category','')}  ")
+            st.markdown(f"**Definition:**\n{entry.get('definition','')}")
+            st.markdown(f"**Advanced TTPs (descriptive):**\n{entry.get('advanced_ttp','')}")
+            st.markdown(f"**2026 Trends:**\n{entry.get('2026_trends','')}")
+            st.markdown(f"**Unknown Factor (speculative):**\n{entry.get('unknown_factor','')}")
+            st.markdown(f"**Detection:**\n{entry.get('detection','')}")
+            st.markdown(f"**Mitigation:**\n{entry.get('mitigation','')}")
+
+            # Offer to download selected entry as markdown
+            md = f"# {entry.get('term')}\n\n**Category:** {entry.get('category')}\n\n## Definition\n{entry.get('definition')}\n\n## Advanced TTPs\n{entry.get('advanced_ttp')}\n\n## 2026 Trends\n{entry.get('2026_trends')}\n\n## Unknown Factor\n{entry.get('unknown_factor')}\n\n## Detection\n{entry.get('detection')}\n\n## Mitigation\n{entry.get('mitigation')}\n"
+            st.download_button("Download entry as Markdown", md, file_name=f"{entry.get('term').lower().replace(' ','_')}.md")
+
+# --- NUCLEI CONSOLE ---
+elif choice == "NUCLEI-CONSOLE":
+    st.header("🎯 ProjectDiscovery Nuclei Integration")
+
+    from nuclei_engine import is_nuclei_installed, install_nuclei, run_scan
+
+    if not is_nuclei_installed():
+        st.error("⚠️ Nuclei is not installed on this system.")
+        if st.button("AUTO-INSTALL NUCLEI"):
+            with st.spinner("Installing Nuclei..."):
+                install_nuclei()
+    else:
+        st.success("💎 Nuclei Engine Active")
+
+        target = st.text_input("Target URL/IP:", "https://example.com")
+        severities = st.multiselect(
+            "Select Severities to Scan:",
+            ["critical", "high", "medium", "low", "info"],
+            default=["critical", "high"]
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("START SCAN"):
+                # start async scan and store scan_id in session
+                scan_id = run_scan_async(target, severities)
+                if scan_id:
+                    st.session_state["nuclei_last_scan"] = scan_id
+        with col2:
+            if st.button("UPDATE TEMPLATES"):
+                try:
+                    subprocess.run(["nuclei", "-ut"], check=True)
+                    st.success("Templates Updated!")
+                except Exception as e:
+                    st.error(f"Failed to update templates: {e}")
+
+        st.markdown("---")
+        st.subheader("Live Output")
+
+        # If WebSocket is enabled server-side, present an embedded client; otherwise poll logs
+        if WS_ENABLED:
+            st.info("WebSocket live-tail is enabled on the server. Streaming logs below.")
+            html = f"""
+            <div>
+              <pre id='log' style='background:#000;color:#0f0;padding:8px;height:300px;overflow:auto;'></pre>
+              <button id='clear'>Clear</button>
+              <script>
+                const ws = new WebSocket('ws://{nuclei_engine.WS_HOST}:{nuclei_engine.WS_PORT}');
+                const log = document.getElementById('log');
+                ws.onmessage = (e) => {{ log.textContent += e.data + '\n'; log.scrollTop = log.scrollHeight; }};
+                document.getElementById('clear').onclick = () => {{ log.textContent = '' }};
+              </script>
+            </div>
+            """
+            st.components.v1.html(html, height=360)
+        else:
+            st.info("WebSocket disabled; polling logs from disk.")
+            scan_id = st.session_state.get("nuclei_last_scan")
+            if scan_id:
+                logs = get_scan_log(scan_id, tail_lines=200)
+                st.code(logs if logs else "(no logs yet)")
+                status = get_scan_status(scan_id)
+                st.write(status)
+            else:
+                st.write("No active scan. Start a scan to see live output.")        # end of encyclopedia entries UI
+elif choice == "AI-AGENT (OPENCLAW)":
+    import openclaw_bridge as oc
+
+    st.header("🦞 OpenClaw Autonomous Agent Control (SAFE)")
+
+    status = oc.get_status()
+    if status.get("moltbot"):
+        st.success("🟢 Agent Gateway: ACTIVE")
+    else:
+        st.error("🔴 Agent Gateway: OFFLINE")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Show manual install instructions"):
+            st.code(oc.install_instructions())
+
+        if st.button("Download installer for review (dry-run)"):
+            try:
+                ok, path = oc.prepare_install_dry_run()
+                if ok:
+                    st.success(f"Installer ready for review: {path}")
+                    st.info("Inspect the downloaded installer before executing. Prefer a disposable VM or container.")
+            except Exception as e:
+                st.error(f"Failed to prepare installer: {e}")
+
+    with col2:
+        st.code(oc.start_gateway_command())
+        st.info("Run this command locally to start the gateway (do not run from the web UI).")
+
+    st.markdown("---")
+    st.subheader("Agent Capabilities")
+    st.write("Enable specific 'Skills' for your ZTRAP agent:")
+    
+    if st.checkbox("Enable Nuclei Auto-Scan Skill"):
+        st.info("Agent will now monitor logs and suggest Nuclei templates automatically.")
+        
+    if st.checkbox("Connect to Telegram/WhatsApp"):
+        st.write("Run `moltbot onboard` in your terminal to pair your device.")
+# --- AI-AGENT (OPENCLAW) ---
+elif choice == "AI-AGENT (OPENCLAW)":
+    import openclaw_bridge as oc
+
+    st.header("🦞 OpenClaw (safe bridge)")
+    enabled = os.getenv("ZTRAP_ENABLE_OPENCLAW") == "1"
+    if not enabled:
+        st.warning("OpenClaw integration is disabled. Set ZTRAP_ENABLE_OPENCLAW=1 to enable controls.")
+
+    status = oc.get_status()
+    st.write(status)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Show manual install instructions"):
+            st.code(oc.install_instructions())
+
+        if st.button("Download installer for review (dry-run)"):
+            try:
+                ok, path = oc.prepare_install_dry_run()
+                if ok:
+                    st.success(f"Installer ready for review: {path}")
+                    st.info("Inspect the downloaded installer before executing. Prefer a disposable VM or container.")
+            except Exception as e:
+                st.error(f"Failed to prepare installer: {e}")
+
+    with col2:
+        st.code(oc.start_gateway_command())
+        st.info("Run this command locally to start the gateway (do not run from the web UI).")
+
+        if st.checkbox("Enable Nuclei Auto-Scan Skill (simulation only)", value=False):
+            st.info("In simulation mode the agent may suggest scans; in production pair your agent manually via 'moltbot onboard'.")
+
+        if st.checkbox("Connect to Telegram/WhatsApp (manual)"):
+            st.write("Run `moltbot onboard` in your terminal to pair your device.")
+
+# --- NEURAL MONITOR ---
+elif choice == "NEURAL-MONITOR":
+    st.header("🧠 Agentic Intent Analysis")
+    st.write("Intercepting M2M (Machine-to-Machine) Traffic...")
+
+    # Simulation of agentic tool calls
+    logs = [
+        {"time": "03:00:01", "agent": "SupportBot_V4", "action": "Read_Email", "status": "SAFE"},
+        {"time": "03:00:05", "agent": "SupportBot_V4", "action": "API_Call:Refund", "status": "SUSPICIOUS (Task Injection Detected)"},
+        {"time": "03:00:10", "agent": "SupportBot_V4", "action": "File_Write: /tmp/shell", "status": "CRITICAL (Agency Hijacked)"}
+    ]
+    st.table(logs)
+
+    if st.button("TRIGGER AUTOMATED COUNTER-HIJACK"):
+        st.warning("Injecting 'Reset-Context' token into Agent stream...")
+        time.sleep(1)
+        st.success("Agent Neutralized.")
