@@ -1,8 +1,9 @@
-import hmac, hashlib
-
-def decrypt_elite_payload(encrypted_blob, key):
-    # Only Mohamed's key can unlock these exploits
-    return "".join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(encrypted_blob))
-
-# Example of an "Uncopyable" encrypted SSTI payload
-ENCRYPTED_SSTI = "LwkfGxoWGB8L..." # Looks like gibberish to everyone else
+elif choice == "SYSTEM-ACCESS":
+    st.header("⚡ Persistent Task Manager")
+    task_name = st.text_input("Job Label", "PayPal-Sub-Takeover-Scan")
+    cmd = st.text_area("Command to Background", "subfinder -d paypal.com | nuclei -t takeovers/")
+    
+    if st.button("DETACH & EXECUTE"):
+        # Uses 'nohup' to keep the process alive after you close the browser
+        subprocess.Popen(f"nohup {cmd} > {task_name}.log 2>&1 &", shell=True)
+        st.success(f"Job '{task_name}' is now running in the shadow. Check Discord for results.")
