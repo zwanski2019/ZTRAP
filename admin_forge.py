@@ -51,7 +51,43 @@ def tool_forge_panel():
                     f.write(file_content)
 
                 st.success(f"🚀 {file_name} has been hot-deployed to the Master Repository.")
+
+                # Regenerate sitemap to include new tool
+                try:
+                    from seo import regenerate_sitemap
+                    regenerate_sitemap(get_dynamic_tools())
+                    st.info("Sitemap updated with deployed tool.")
+                except Exception as e:
+                    st.warning(f"Failed to update sitemap automatically: {e}")
+
                 st.rerun()
+
+    st.markdown("---")
+    st.subheader("Static File Manager (SEO & Verification)")
+    st.write("Upload static files (e.g., verification HTML, sitemap.xml, robots.txt). These will be served from `/app/static/` when deployed.")
+
+    static_upload = st.file_uploader("Upload Static File", key="static_upload")
+    if static_upload is not None:
+        sname = static_upload.name
+        scontent = static_upload.getvalue().decode("utf-8")
+        publish_to_static = st.checkbox("Publish to site static folder (public)", value=False)
+
+        if publish_to_static:
+            st.warning("You are about to publish a file publicly under /app/static/.")
+            confirm = st.checkbox("I understand the security implications and confirm publish.")
+            if st.button(f"PUBLISH {sname}"):
+                if not confirm:
+                    st.error("Publish not confirmed. Check the confirmation box to proceed.")
+                else:
+                    # Save to static/
+                    try:
+                        os.makedirs('static', exist_ok=True)
+                        with open(os.path.join('static', sname), 'w', encoding='utf-8') as sf:
+                            sf.write(scontent)
+                        st.success(f"Static file {sname} published to /app/static/{sname}")
+                    except Exception as e:
+                        st.error(f"Failed to publish static file: {e}")
+
 
 
 def get_dynamic_tools():
