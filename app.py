@@ -8,6 +8,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from app1 import add_persistent_task_manager
+from whatsapp_engine import install_whatsapp_osint, run_whatsapp_scan
+from security import LOG_FILE, log_attempt
 
 # --- APP CONFIG ---
 # Page config should be set early
@@ -27,11 +29,17 @@ def check_access():
         password = st.text_input("ENTER OPERATOR KEY:", type="password")
 
         if st.button("AUTHENTICATE"):
-            if password == "zwanski":
+            master_key = os.getenv("ZTRAP_MASTER_KEY", "zwanski")
+            if password == master_key:
                 st.session_state["authenticated"] = True
                 st.success("🔓 Access Granted. Initializing ZTRAP Console...")
                 st.rerun()  # Refresh the app to show the dashboard
             else:
+                # Log failed attempts for intelligence gathering
+                try:
+                    log_attempt("FAILED_PASSWORD", f"Attempt with key: {password}")
+                except Exception:
+                    pass
                 st.error("🛑 INVALID KEY. UNAUTHORIZED OPERATOR DETECTED.")
         return False
 
@@ -61,7 +69,7 @@ st.markdown(
 # --- SIDEBAR NAV ---
 with st.sidebar:
     st.title("🛡️ ZWANZKI")
-    menu = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)"]
+    menu = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "WHATSAPP-OSINT", "ACCESS-LOGS", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)"]
     choice = st.sidebar.radio("COMMANDS", menu)
 
 # --- DASHBOARD ---
@@ -152,23 +160,66 @@ elif choice == "GLOBAL-INTEL":
     )
     st.map(map_data)
     st.caption("Live visualization of target infrastructure nodes.")
-elif choice == "WHATSAPP-OSINT":
-    st.header("📱 WhatsApp Intelligence Gatherer")
-    
-    if not os.path.exists("WhatsApp-OSINT"):
-        st.warning("Tool not detected locally.")
-        if st.button("DOWNLOAD & INSTALL"):
-            install_whatsapp_osint()
+# --- BROWSER SENTINEL ---
+elif choice == "BROWSER-SENTINEL":
+    st.header("🛡️ Browser Sentinel — Integrity Check")
+    st.write("This check attempts to detect automation / headless browsers. The check uses a small client-side probe and may reload the page to report results.")
+
+    # Inject client-side JS to detect navigator.webdriver and userAgent. The script appends query params and reloads the page so server can read them.
+    if st.button("Run Browser Integrity Check"):
+        js = """
+        <script>
+        (function() {
+          try {
+            const isHeadless = !!navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent);
+            const params = new URLSearchParams(window.location.search);
+            params.set('sentinel', '1');
+            params.set('headless', isHeadless ? '1' : '0');
+            params.set('ua', encodeURIComponent(navigator.userAgent || ''));
+            window.location.search = params.toString();
+          } catch(e) { console.log(e); }
+        })();
+        </script>
+        """
+        st.components.v1.html(js, height=60)
+
+    params = st.experimental_get_query_params()
+    if params.get('sentinel'):
+        headless = params.get('headless', ['0'])[0] == '1'
+        ua = params.get('ua', [''])[0]
+        if headless:
+            st.warning("Automation/Headless browser detected.")
+            try:
+                log_attempt("SENTINEL_BLOCK", f"Automation/Headless detected, ua={ua}")
+            except Exception:
+                pass
+        else:
+            st.success("Browser appears normal.")
+        # Clear sentinel params to avoid repeated triggers on refresh
+        st.experimental_set_query_params()
+
+# --- ACCESS LOGS (Staff Only) ---
+elif choice == "ACCESS-LOGS":
+    st.header("🕵️ Security Access Logs")
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, "r") as f:
+                logs = json.load(f)
+        except Exception as e:
+            st.error(f"Failed to load logs: {e}")
+            logs = []
+
+        if logs:
+            st.table(pd.DataFrame(logs).sort_values(by="timestamp", ascending=False))
+        else:
+            st.info("No suspicious activity recorded.")
+
+        if st.button("PURGE LOGS"):
+            os.remove(LOG_FILE)
+            st.success("Logs purged.")
+            st.rerun()
     else:
-        st.success("💎 WhatsApp-OSINT Engine: ACTIVE")
-        
-        target_number = st.text_input("Enter Phone Number (with Country Code):", "+1234567890")
-        
-        if st.button("START INTELLIGENCE GATHERING"):
-            if target_number:
-                run_whatsapp_scan(target_number)
-            else:
-                st.error("Target number required.")
+        st.info("No suspicious activity recorded.")
 
 # --- ENCYCLOPEDIA ---
 elif choice == "ENCYCLOPEDIA":
@@ -376,3 +427,67 @@ elif choice == "NEURAL-MONITOR":
         st.warning("Injecting 'Reset-Context' token into Agent stream...")
         time.sleep(1)
         st.success("Agent Neutralized.")
+<<<<<<< HEAD
+=======
+
+# --- BROWSER SENTINEL ---
+elif choice == "BROWSER-SENTINEL":
+    st.header("🛡️ Browser Sentinel — Integrity Check")
+    st.write("This check attempts to detect automation / headless browsers. The check uses a small client-side probe and may reload the page to report results.")
+
+    # Inject client-side JS to detect navigator.webdriver and userAgent. The script appends query params and reloads the page so server can read them.
+    if st.button("Run Browser Integrity Check"):
+        js = """
+        <script>
+        (function() {
+          try {
+            const isHeadless = !!navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent);
+            const params = new URLSearchParams(window.location.search);
+            params.set('sentinel', '1');
+            params.set('headless', isHeadless ? '1' : '0');
+            params.set('ua', encodeURIComponent(navigator.userAgent || ''));
+            window.location.search = params.toString();
+          } catch(e) { console.log(e); }
+        })();
+        </script>
+        """
+        st.components.v1.html(js, height=60)
+
+    params = st.experimental_get_query_params()
+    if params.get('sentinel'):
+        headless = params.get('headless', ['0'])[0] == '1'
+        ua = params.get('ua', [''])[0]
+        if headless:
+            st.warning("Automation/Headless browser detected.")
+            try:
+                log_attempt("SENTINEL_BLOCK", f"Automation/Headless detected, ua={ua}")
+            except Exception:
+                pass
+        else:
+            st.success("Browser appears normal.")
+        # Clear sentinel params to avoid repeated triggers on refresh
+        st.experimental_set_query_params()
+
+# --- ACCESS LOGS (Staff Only) ---
+elif choice == "ACCESS-LOGS":
+    st.header("🕵️ Security Access Logs")
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, "r") as f:
+                logs = json.load(f)
+        except Exception as e:
+            st.error(f"Failed to load logs: {e}")
+            logs = []
+
+        if logs:
+            st.table(pd.DataFrame(logs).sort_values(by="timestamp", ascending=False))
+        else:
+            st.info("No suspicious activity recorded.")
+
+        if st.button("PURGE LOGS"):
+            os.remove(LOG_FILE)
+            st.success("Logs purged.")
+            st.rerun()
+    else:
+        st.info("No suspicious activity recorded.")
+>>>>>>> fix/whatsapp-routing

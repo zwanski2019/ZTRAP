@@ -1,5 +1,7 @@
 # ZTRAP
 
+[![CI](https://github.com/zwanski2019/ZTRAP/actions/workflows/ci.yml/badge.svg)](https://github.com/zwanski2019/ZTRAP/actions/workflows/ci.yml) [![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io/cloud)
+
 ZTRAP is a Streamlit-based Red Team console demo.
 
 Quick start
