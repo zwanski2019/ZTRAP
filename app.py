@@ -94,7 +94,23 @@ elif choice == "EXPLOIT-LAB":
     vector = st.selectbox("Vector", ["SSTI", "OAuth Bypass", "JWT Injection"])
     st.code("{{7*7}}", language="jinja2")
     st.button("ENCODE & BYPASS WAF")
-
+elif choice == "WHATSAPP-OSINT":
+    st.header("📱 WhatsApp Intelligence Gatherer")
+    
+    if not os.path.exists("WhatsApp-OSINT"):
+        st.warning("Tool not detected locally.")
+        if st.button("DOWNLOAD & INSTALL"):
+            install_whatsapp_osint()
+    else:
+        st.success("💎 WhatsApp-OSINT Engine: ACTIVE")
+        
+        target_number = st.text_input("Enter Phone Number (with Country Code):", "+1234567890")
+        
+        if st.button("START INTELLIGENCE GATHERING"):
+            if target_number:
+                run_whatsapp_scan(target_number)
+            else:
+                st.error("Target number required.")
 # --- SYSTEM ACCESS ---
 elif choice == "SYSTEM-ACCESS":
     st.header("💻 System Access Suite")
