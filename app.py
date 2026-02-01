@@ -136,6 +136,23 @@ elif choice == "GLOBAL-INTEL":
     )
     st.map(map_data)
     st.caption("Live visualization of target infrastructure nodes.")
+elif choice == "WHATSAPP-OSINT":
+    st.header("📱 WhatsApp Intelligence Gatherer")
+    
+    if not os.path.exists("WhatsApp-OSINT"):
+        st.warning("Tool not detected locally.")
+        if st.button("DOWNLOAD & INSTALL"):
+            install_whatsapp_osint()
+    else:
+        st.success("💎 WhatsApp-OSINT Engine: ACTIVE")
+        
+        target_number = st.text_input("Enter Phone Number (with Country Code):", "+1234567890")
+        
+        if st.button("START INTELLIGENCE GATHERING"):
+            if target_number:
+                run_whatsapp_scan(target_number)
+            else:
+                st.error("Target number required.")
 
 # --- ENCYCLOPEDIA ---
 elif choice == "ENCYCLOPEDIA":
