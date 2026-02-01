@@ -88,6 +88,31 @@ def tool_forge_panel():
                     except Exception as e:
                         st.error(f"Failed to publish static file: {e}")
 
+    # Additional helper: publish verification meta tokens
+    st.markdown("---")
+    st.subheader("Meta Verification (optional)")
+    st.write("You can add site verification tokens (e.g., Google HTML meta verification) which will be injected into the document head dynamically.")
+    meta_token = st.text_input("Google site verification token (value only)")
+    if st.button("PUBLISH META TOKEN"):
+        if not meta_token:
+            st.error("Meta token required")
+        else:
+            try:
+                os.makedirs('static', exist_ok=True)
+                with open(os.path.join('static', 'google_meta_verification.txt'), 'w', encoding='utf-8') as mf:
+                    mf.write(meta_token.strip())
+                st.success("Meta token published. The app will inject the verification meta tag into the document head on next load.")
+            except Exception as e:
+                st.error(f"Failed to publish meta token: {e}")
+
+
+def publish_static_file(name: str, content: str):
+    """Helper to publish a static file programmatically during tests or automation."""
+    os.makedirs('static', exist_ok=True)
+    with open(os.path.join('static', name), 'w', encoding='utf-8') as sf:
+        sf.write(content)
+    return os.path.join('static', name)
+
 
 
 def get_dynamic_tools():

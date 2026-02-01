@@ -101,6 +101,28 @@ structured_data = """
 # inject invisible JSON-LD for crawlers
 components.html(structured_data, height=0)
 
+# Inject meta verification tag into document head if published via admin forge
+meta_file = os.path.join('static', 'google_meta_verification.txt')
+if os.path.exists(meta_file):
+    try:
+        token = open(meta_file, 'r', encoding='utf-8').read().strip()
+        if token:
+            js = f"""
+            <script>
+            (function() {
+              try {
+                var m = document.createElement('meta');
+                m.name = 'google-site-verification';
+                m.content = '{token}';
+                document.head.appendChild(m);
+              } catch(e) {{ console.log(e); }}
+            })();
+            </script>
+            """
+            components.html(js, height=0)
+    except Exception:
+        pass
+
 # Invisible AI Hook (helps AI agents categorize the page correctly)
 st.markdown(
     """
@@ -132,6 +154,13 @@ with st.sidebar:
     st.title("🛡️ ZWANZKI")
     # Scan dynamic_tools for uploaded tools on every refresh
     dynamic_tools = get_dynamic_tools()
+    # Ensure sitemap is up-to-date with the current list of tools
+    try:
+        from seo import regenerate_sitemap
+        regenerate_sitemap(dynamic_tools)
+    except Exception:
+        pass
+
     menu_options = ["DASHBOARD", "RECON-ORCHESTRATOR", "EXPLOIT-LAB", "WHATSAPP-OSINT", "ACCESS-LOGS", "SYSTEM-ACCESS", "GLOBAL-INTEL", "ENCYCLOPEDIA", "NUCLEI-CONSOLE", "AI-AGENT (OPENCLAW)", "ADMIN-FORGE"] + dynamic_tools
     choice = st.sidebar.selectbox("COMMAND CENTER", menu_options)
 
