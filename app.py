@@ -28,7 +28,8 @@ def check_access():
         password = st.text_input("ENTER OPERATOR KEY:", type="password")
 
         if st.button("AUTHENTICATE"):
-            if password == "zwanski":
+            master_key = os.getenv("ZTRAP_MASTER_KEY", "zwanski")
+            if password == master_key:
                 st.session_state["authenticated"] = True
                 st.success("🔓 Access Granted. Initializing ZTRAP Console...")
                 st.rerun()  # Refresh the app to show the dashboard
