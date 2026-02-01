@@ -1,4 +1,51 @@
 import os
+import streamlit as st
+import streamlit.components.v1 as components
+
+# --- 1. GOOGLE TAG MANAGER (GTM-WMJFML6W) ---
+# High in the <head> logic
+gtm_head = """
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WMJFML6W');</script>
+"""
+
+# Immediately after <body> logic
+gtm_body = """
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WMJFML6W"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+"""
+
+# Injecting into Streamlit
+components.html(gtm_head, height=0)
+components.html(gtm_body, height=0)
+
+# --- 2. REST OF YOUR APP CONFIG ---
+st.set_page_config(page_title="Zwanski Tech | ZTRAP", page_icon="🛡️")
+
+def check_access():
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+    if not st.session_state["authenticated"]:
+        st.title("🛡️ Zwanski Tech: Master Access")
+        password = st.text_input("ENTER OPERATOR KEY:", type="password")
+        if st.button("AUTHENTICATE"):
+            if password == os.getenv("ZTRAP_MASTER_KEY", "zwanski"):
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("🛑 UNAUTHORIZED.")
+        return False
+    return True
+
+if not check_access():
+    st.stop()
+
+st.title("⚡ ZTRAP v2.0 // COMMAND")
+st.success("GTM-WMJFML6W Tracking Active.")
+import os
 import json
 import subprocess
 from datetime import datetime
