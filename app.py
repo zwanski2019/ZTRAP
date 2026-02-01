@@ -1,7 +1,18 @@
 import streamlit as st
 import subprocess, os, json, time, base64
 from datetime import datetime
+import pandas as pd
+import numpy as np
 
+elif choice == "GLOBAL-INTEL":
+    st.header("🌎 Real-Time Attack Surface Map")
+    # Generate mock data based on your target's IP geo-location
+    map_data = pd.DataFrame(
+        np.random.randn(10, 2) / [50, 50] + [37.76, -122.4], # Centered on Silicon Valley
+        columns=['lat', 'lon']
+    )
+    st.map(map_data)
+    st.caption("Live visualization of target infrastructure nodes and staging clusters.")
 # --- SYSTEM CONFIGURATION ---
 ST_CONFIG = {"page_title": "ZTRAP | Elite Red Team Console", "layout": "wide"}
 st.set_page_config(**ST_CONFIG)
