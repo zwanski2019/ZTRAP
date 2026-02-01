@@ -1,3 +1,9 @@
+import getpass
+
+# Hard-lock to your specific Kali username
+if getpass.getuser() != "zwanski":
+    st.error("UNAUTHORIZED OPERATOR DETECTED. SYSTEM LOCKING.")
+    os._exit(0)
 import streamlit as st
 import subprocess, os, json, time, base64
 from datetime import datetime
